@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Coach Board">
+  <meta name="theme-color" content="#1d2330">
+  <title>Basketball Coaching Board</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="toolbar">
+    <div class="seg" id="modeSeg">
+      <button data-mode="full">Full Court</button>
+      <button data-mode="half">Half Court</button>
+    </div>
+
+    <div class="seg" id="toolSeg">
+      <button data-tool="move">✋ Move</button>
+      <button data-tool="draw">✏️ Draw</button>
+      <button data-tool="erase">🧽 Erase</button>
+    </div>
+
+    <div class="colors" id="colors">
+      <button class="swatch" data-color="#E53935" style="background:#E53935" aria-label="Red"></button>
+      <button class="swatch" data-color="#00C853" style="background:#00C853" aria-label="Green"></button>
+      <button class="swatch" data-color="#1E4FFF" style="background:#1E4FFF" aria-label="Blue"></button>
+      <button class="swatch" data-color="#FFD600" style="background:#FFD600" aria-label="Yellow"></button>
+      <button class="swatch" data-color="#111111" style="background:#111111" aria-label="Black"></button>
+    </div>
+
+    <div class="actions">
+      <button id="undoBtn">↶ Undo</button>
+      <button id="clearBtn">Clear Lines</button>
+      <button id="resetBtn">Reset Players</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <svg id="board" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="wood" patternUnits="userSpaceOnUse" width="70" height="12">
+          <rect width="70" height="12" fill="#E3B57C"/>
+          <rect y="0" width="70" height="3" fill="#E9BF88"/>
+          <rect y="3" width="70" height="3" fill="#DEAF75"/>
+          <rect y="6" width="70" height="3" fill="#E6BA81"/>
+          <rect y="9" width="70" height="3" fill="#DAAA6F"/>
+          <path d="M0 3h70M0 6h70M0 9h70M0 12h70" stroke="#CB9A62" stroke-width="0.15"/>
+          <path d="M20 0v3M55 3v3M35 6v3M8 9v3M62 9v3" stroke="#C3915A" stroke-width="0.2"/>
+        </pattern>
+        <radialGradient id="gBlue" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#8AF3F5"/>
+          <stop offset="0.45" stop-color="#00CED1"/>
+          <stop offset="1" stop-color="#009497"/>
+        </radialGradient>
+        <radialGradient id="gBlack" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#6A6A6A"/>
+          <stop offset="0.45" stop-color="#1A1A1A"/>
+          <stop offset="1" stop-color="#000000"/>
+        </radialGradient>
+        <radialGradient id="gBall" cx="35%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#FFB872"/>
+          <stop offset="0.5" stop-color="#F07A1A"/>
+          <stop offset="1" stop-color="#A84A05"/>
+        </radialGradient>
+      </defs>
+      <g id="courtLayer"></g>
+      <g id="drawLayer"></g>
+      <g id="tokenLayer"></g>
+    </svg>
+  </main>
+
+  <script src="court.js"></script>
+  <script src="drawing.js"></script>
+  <script src="board.js"></script>
+</body>
+</html>
