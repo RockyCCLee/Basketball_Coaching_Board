@@ -1,9 +1,10 @@
 /* Board controller: tokens, drag & drop, tools, persistence. */
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
-  const STORE = 'bcb-state-v2';
+  const STORE = 'bcb-state-v3';
   const R = 6;        // player token radius (0.6 m)
   const BALL_R = 4;
+  const ATTACH_DIST = 9.0; // distance within which a player carries the ball
 
   const svg = document.getElementById('board');
   const courtLayer = document.getElementById('courtLayer');
@@ -21,6 +22,30 @@
     for (const k in attrs) e.setAttribute(k, attrs[k]);
     if (parent) parent.appendChild(e);
     return e;
+  }
+
+  /* ---------- Ball possession helpers ---------- */
+  function getBallHolder() {
+    const [bx, by] = board().tokens.ball;
+    let closestId = null;
+    let minDist = ATTACH_DIST;
+    for (const t of TOKENS) {
+      if (t.id === 'ball') continue;
+      const [px, py] = board().tokens[t.id];
+      const d = Math.hypot(bx - px, by - py);
+      if (d < minDist) {
+        minDist = d;
+        closestId = t.id;
+      }
+    }
+    return closestId;
+  }
+
+  function isBallBeingDragged() {
+    for (const entry of active.values()) {
+      if (entry.kind === 'drag' && entry.id === 'ball') return true;
+    }
+    return false;
   }
 
   /* ---------- Default lineups ---------- */
@@ -57,7 +82,7 @@
       p.k3 = [34, 80];   // left wing
       p.k4 = [136, 50];  // right corner / deep wing
       p.k5 = [14, 50];   // left corner / deep wing
-      p.ball = [75, 106]; // ball with offensive point guard at top of key
+      p.ball = [75, 101.5]; // ball held by offensive point guard (k1) at top of key
     }
     return p;
   }
@@ -107,7 +132,7 @@
       const g = el('g', { class: 'token', 'data-id': t.id }, tokenLayer);
       const inner = el('g', { class: 'inner' }, g);
       if (t.team === 'ball') {
-        el('circle', { r: 8, fill: 'rgba(0,0,0,0)' }, inner); // larger touch target
+        el('circle', { r: BALL_R + 1, fill: 'rgba(0,0,0,0)' }, inner); // exact touch target
         el('circle', { cx: 0.6, cy: 0.9, r: BALL_R, fill: 'rgba(0,0,0,0.35)' }, inner);
         el('circle', { r: BALL_R, fill: 'url(#gBall)', stroke: '#5a2a00', 'stroke-width': 0.3 }, inner);
         const a = BALL_R, b = BALL_R * 0.7;
@@ -129,6 +154,7 @@
       }
       tokenEls[t.id] = g;
     }
+    if (tokenEls.ball) tokenLayer.appendChild(tokenEls.ball);
   }
 
   function placeToken(id) {
@@ -190,9 +216,35 @@
       if (!t) return;
       const id = t.dataset.id;
       const [x, y] = board().tokens[id];
-      active.set(e.pointerId, { kind: 'drag', id, dx: x - p.x, dy: y - p.y });
-      tokenLayer.appendChild(t); // bring to front
-      t.querySelector('.inner').setAttribute('transform', 'scale(1.12)');
+
+      if (id === 'ball') {
+        // Dragging the ball directly moves only the ball away
+        active.set(e.pointerId, { kind: 'drag', id, dx: x - p.x, dy: y - p.y, hasBall: false });
+        tokenLayer.appendChild(t); // bring ball to front
+        t.querySelector('.inner').setAttribute('transform', 'scale(1.15)');
+      } else {
+        // Dragging a player token: check if player is carrying the ball
+        const holder = getBallHolder();
+        const hasBall = (holder === id);
+        const [bx, by] = board().tokens.ball;
+
+        active.set(e.pointerId, {
+          kind: 'drag',
+          id,
+          dx: x - p.x,
+          dy: y - p.y,
+          hasBall,
+          ballDx: bx - x,
+          ballDy: by - y,
+        });
+
+        tokenLayer.appendChild(t); // bring player to front
+        tokenLayer.appendChild(tokenEls.ball); // ensure ball is always on top of players
+        t.querySelector('.inner').setAttribute('transform', 'scale(1.12)');
+        if (hasBall) {
+          tokenEls.ball.querySelector('.inner').setAttribute('transform', 'scale(1.15)');
+        }
+      }
     } else if (state.tool === 'draw') {
       const stroke = Drawing.begin(board().strokes, hist(), p, state.color);
       active.set(e.pointerId, { kind: 'draw', stroke });
@@ -212,8 +264,14 @@
     const list = events.length ? events : [e];
     if (a.kind === 'drag') {
       const p = toSvg(e);
-      board().tokens[a.id] = clamp([p.x + a.dx, p.y + a.dy]);
+      const newPos = clamp([p.x + a.dx, p.y + a.dy]);
+      board().tokens[a.id] = newPos;
       placeToken(a.id);
+
+      if (a.hasBall && !isBallBeingDragged()) {
+        board().tokens.ball = clamp([newPos[0] + a.ballDx, newPos[1] + a.ballDy]);
+        placeToken('ball');
+      }
     } else if (a.kind === 'draw') {
       for (const ev of list) Drawing.extend(a.stroke, toSvg(ev));
     } else {
@@ -227,7 +285,12 @@
     const a = active.get(e.pointerId);
     if (!a) return;
     active.delete(e.pointerId);
-    if (a.kind === 'drag') tokenEls[a.id].querySelector('.inner').removeAttribute('transform');
+    if (a.kind === 'drag') {
+      tokenEls[a.id]?.querySelector('.inner')?.removeAttribute('transform');
+      if (a.hasBall) {
+        tokenEls.ball?.querySelector('.inner')?.removeAttribute('transform');
+      }
+    }
     save();
     updateUI();
   }
@@ -294,6 +357,7 @@
   $('#resetBtn').addEventListener('click', () => {
     board().tokens = defaultPositions(state.mode);
     relayout();
+    if (tokenEls.ball) tokenLayer.appendChild(tokenEls.ball);
     save();
   });
 

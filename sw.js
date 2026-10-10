@@ -1,4 +1,4 @@
-const CACHE = 'bcb-v2';
+const CACHE = 'bcb-v3';
 const ASSETS = ['./', './index.html', './styles.css', './court.js', './drawing.js', './board.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (e) => {
