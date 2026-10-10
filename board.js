@@ -1,7 +1,7 @@
 /* Board controller: tokens, drag & drop, tools, persistence. */
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
-  const STORE = 'bcb-state-v1';
+  const STORE = 'bcb-state-v2';
   const R = 6;        // player token radius (0.6 m)
   const BALL_R = 4;
 
@@ -27,22 +27,37 @@
   function defaultPositions(mode) {
     const p = {};
     if (mode === 'full') {
-      const blue = { 1: [120, 75], 2: [95, 35], 3: [95, 115], 4: [60, 50], 5: [60, 100] };
+      // Both teams in 2-3 zone defense defending their own basket (as in 2-3 zone diagram):
+      // Left basket (x = 15.75, y = 75, FT line at x = 58): Blue team
+      const blue = {
+        1: [56, 55],    // top elbow (left guard)
+        2: [56, 95],    // bottom elbow (right guard)
+        3: [30, 38],    // top wing/block (left forward)
+        4: [30, 112],   // bottom wing/block (right forward)
+        5: [30, 75],    // center of paint in front of rim
+      };
       for (const n in blue) {
         p['b' + n] = [...blue[n]];
+        // Right basket (baseline at x = 280): Black team
         p['k' + n] = [Court.L - blue[n][0], blue[n][1]];
       }
-      p.ball = [140, 75];
+      p.ball = [140, 75]; // center court
     } else {
-      // Half court (basket at top): blue on offence, black defending
-      const off = { 1: [75, 100], 2: [130, 60], 3: [20, 60], 4: [40, 25], 5: [105, 30] };
-      const basket = [75, 15.75];
-      for (const n in off) {
-        const [x, y] = off[n];
-        p['b' + n] = [x, y];
-        p['k' + n] = [x + (basket[0] - x) * 0.2, y + (basket[1] - y) * 0.2];
-      }
-      p.ball = [86, 102];
+      // Half court mode (basket at x = 75, y = 15.75):
+      // My team (Blue) as defense team in 2-3 zone position:
+      p.b1 = [54, 57];   // left elbow
+      p.b2 = [96, 57];   // right elbow
+      p.b3 = [38, 33];   // left wing/block
+      p.b4 = [112, 33];  // right wing/block
+      p.b5 = [75, 33];   // center of paint in front of rim
+
+      // Offense team (Black) all stand outside the 3-point line:
+      p.k1 = [75, 96];   // top of key
+      p.k2 = [116, 80];  // right wing
+      p.k3 = [34, 80];   // left wing
+      p.k4 = [136, 50];  // right corner / deep wing
+      p.k5 = [14, 50];   // left corner / deep wing
+      p.ball = [75, 106]; // ball with offensive point guard at top of key
     }
     return p;
   }
