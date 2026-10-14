@@ -44,7 +44,7 @@
     },
     {
       id: 'open_for_1',
-      name: 'Open for 1',
+      name: '1v1 - 1',
       mode: 'half',
       halfRole: 'offence',
       tokens: {
@@ -101,14 +101,164 @@
         },
       ],
     },
+    {
+      id: 'pick_and_roll_5_3_4',
+      name: 'Pick&Roll - 5/3/4',
+      mode: 'half',
+      halfRole: 'offence',
+      tokens: {
+        b1: [95, 88],
+        ball: [87, 84],
+        k1: [54, 86],
+        b5: [65, 90],
+        k5: [79, 77],
+        b3: [28, 25],
+        k3: [40, 26],
+        b4: [112, 38],
+        k4: [103, 30],
+        b2: [138, 57],
+        k2: [123, 60],
+      },
+      strokes: [
+        // Green arrow: 1 drives towards the key after using the screen
+        {
+          color: '#00C853',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowGreen)',
+          pts: [
+            [95, 78],
+            [92, 70],
+            [85, 62],
+            [77, 57],
+            [71, 54],
+          ],
+        },
+        // Red arrow: 5 rolls directly to the hoop
+        {
+          color: '#E53935',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowRed)',
+          pts: [
+            [66, 78],
+            [67, 62],
+            [68, 44],
+            [73, 26],
+          ],
+        },
+        // Blue arrow: kick out pass to 3 on left wing
+        {
+          color: '#1E4FFF',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowBlue)',
+          pts: [
+            [62, 51],
+            [51, 42],
+            [41, 33],
+          ],
+        },
+        // Blue arrow: kick out pass to 4 on right wing
+        {
+          color: '#1E4FFF',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowBlue)',
+          pts: [
+            [73, 47],
+            [85, 43],
+            [96, 40],
+            [105, 39],
+          ],
+        },
+      ],
+      tracks: [
+        // Cyan track: 1 dribble from Setup [42, 118] across to [95, 88]
+        {
+          color: '#00CED1',
+          pts: [
+            [42, 122],
+            [54, 118],
+            [67, 111],
+            [79, 102],
+            [90, 93],
+            [95, 88],
+          ],
+        },
+        // Cyan track: 5 moves from Setup [74, 68] to set pick at [65, 90]
+        {
+          color: '#00CED1',
+          pts: [
+            [74, 68],
+            [71, 76],
+            [68, 83],
+            [65, 90],
+          ],
+        },
+        // Black track: 5 drops on defense from Setup [75, 45] to [79, 77]
+        {
+          color: '#1A1A1A',
+          pts: [
+            [75, 45],
+            [76, 55],
+            [78, 67],
+            [79, 77],
+          ],
+        },
+        // Cyan track: 4 cuts from Setup [112, 52] to [112, 38]
+        {
+          color: '#00CED1',
+          pts: [
+            [112, 52],
+            [113, 45],
+            [112, 38],
+          ],
+        },
+        // Black track: 4 follows from Setup [101, 43] to [103, 30]
+        {
+          color: '#1A1A1A',
+          pts: [
+            [101, 43],
+            [102, 36],
+            [103, 30],
+          ],
+        },
+      ],
+    },
   ];
 
   function loadStrategies() {
+    let list = null;
     try {
       const data = JSON.parse(localStorage.getItem(STRAT_STORE));
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data) && data.length > 0 && data[0]?.tokens) list = data;
     } catch {}
-    return JSON.parse(JSON.stringify(DEFAULT_STRATEGIES));
+
+    if (!list) {
+      return JSON.parse(JSON.stringify(DEFAULT_STRATEGIES));
+    }
+
+    // Migration: rename 'Open for 1' -> '1v1 - 1'
+    const openFor1 = list.find((s) => s.id === 'open_for_1');
+    if (openFor1 && openFor1.name === 'Open for 1') {
+      openFor1.name = '1v1 - 1';
+    }
+
+    // Migration: ensure 'Pick&Roll - 5/3/4' is in the list
+    if (!list.some((s) => s.id === 'pick_and_roll_5_3_4')) {
+      const pnrPreset = DEFAULT_STRATEGIES.find((s) => s.id === 'pick_and_roll_5_3_4');
+      if (pnrPreset) {
+        list.push(JSON.parse(JSON.stringify(pnrPreset)));
+      }
+    }
+
+    // Save migrated list
+    try {
+      localStorage.setItem(STRAT_STORE, JSON.stringify(list));
+    } catch {}
+
+    return list;
   }
 
   let strategies = loadStrategies();
@@ -233,11 +383,10 @@
   function freshBoard(mode, role = 'offence') {
     if (mode === 'half') {
       const s0 = strategies[0] || DEFAULT_STRATEGIES[0];
-      return {
-        tokens: JSON.parse(JSON.stringify(s0.tokens)),
-        strokes: JSON.parse(JSON.stringify(s0.strokes || [])),
-        tracks: JSON.parse(JSON.stringify(s0.tracks || [])),
-      };
+      const tokens = s0 && s0.tokens ? JSON.parse(JSON.stringify(s0.tokens)) : defaultPositions('half', role);
+      const strokes = s0 && s0.strokes ? JSON.parse(JSON.stringify(s0.strokes)) : [];
+      const tracks = s0 && s0.tracks ? JSON.parse(JSON.stringify(s0.tracks)) : [];
+      return { tokens, strokes, tracks };
     }
     return { tokens: defaultPositions('full'), strokes: [], tracks: [] };
   }
