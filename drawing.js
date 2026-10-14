@@ -29,9 +29,12 @@ const Drawing = (() => {
     p.setAttribute('d', pathD(stroke.pts));
     p.setAttribute('fill', 'none');
     p.setAttribute('stroke', stroke.color);
-    p.setAttribute('stroke-width', WIDTH);
+    p.setAttribute('stroke-width', stroke.width || WIDTH);
     p.setAttribute('stroke-linecap', 'round');
     p.setAttribute('stroke-linejoin', 'round');
+    if (stroke.arrow) {
+      p.setAttribute('marker-end', stroke.marker || 'url(#arrowRed)');
+    }
     els.set(stroke, p);
     return p;
   }
@@ -103,5 +106,5 @@ const Drawing = (() => {
     render(layer, strokes);
   }
 
-  return { render, begin, extend, eraseAt, undo, clear };
+  return { render, begin, extend, eraseAt, undo, clear, pathD };
 })();

@@ -140,3 +140,316 @@ button:disabled { opacity: 0.35; }
 .token { cursor: grab; }
 #tokenLayer.inert { pointer-events: none; }
 .token text { pointer-events: none; }
+
+/* Strategy Dropdown Group in Toolbar */
+.strat-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 3px 6px;
+}
+
+.strat-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #8da2c0;
+  margin-left: 6px;
+  user-select: none;
+}
+
+.strat-select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #1f2736;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 10px;
+  min-height: 36px;
+  cursor: pointer;
+  outline: none;
+  max-width: 170px;
+}
+
+.strat-select:focus {
+  border-color: var(--accent);
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.modal-card {
+  background: #232a3b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  overflow: hidden;
+}
+
+.modal-card.modal-sm {
+  max-width: 400px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: transparent;
+  color: #a0aec0;
+  font-size: 18px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.modal-close:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+.modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-hint {
+  font-size: 12px;
+  color: #8da2c0;
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1c2230;
+}
+
+.btn-danger {
+  background: #c53030 !important;
+  color: #fff !important;
+}
+.btn-danger:active { background: #9b2c2c !important; }
+
+.input-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e0;
+  margin-bottom: 6px;
+}
+
+.text-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 16px;
+  color: #fff;
+  background: #171d29;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  outline: none;
+}
+.text-input:focus { border-color: var(--accent); }
+
+/* Strategy Manager List Items */
+.strat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.strat-item {
+  position: relative;
+  background: #1c2331;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  overflow: hidden;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.strat-item.active-strat {
+  border-color: #00CED1;
+  background: #1b2f3a;
+}
+
+.strat-order-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strat-order-btn {
+  padding: 2px 6px;
+  min-height: 20px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.strat-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strat-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.strat-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.strat-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 206, 209, 0.18);
+  color: #00CED1;
+  text-transform: uppercase;
+}
+
+.strat-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.strat-item-btn {
+  padding: 6px 10px;
+  min-height: 32px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+/* Slide-to-Delete Bar (activated after 3s hold) */
+.slide-delete-banner {
+  position: absolute;
+  inset: 0;
+  background: #5c1d1d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  z-index: 5;
+  animation: fadeIn 0.2s ease;
+}
+
+.slide-delete-slider {
+  flex: 1;
+  margin-right: 8px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-delete-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbd5d5;
+  pointer-events: none;
+}
+
+.slide-delete-handle {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  bottom: 2px;
+  width: 44px;
+  background: #e53e3e;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.slide-delete-confirm-btn {
+  background: #e53e3e !important;
+  color: #fff !important;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 6px 12px;
+  min-height: 34px;
+}
+
+.slide-delete-cancel-btn {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+  padding: 6px 10px;
+  min-height: 34px;
+  margin-left: 4px;
+}
+
+.hold-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: #e53e3e;
+  width: 0%;
+  transition: width 0.08s linear;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

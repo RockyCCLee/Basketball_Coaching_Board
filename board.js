@@ -1,7 +1,8 @@
-/* Board controller: tokens, drag & drop, collision, tracking, tools, persistence. */
+/* Board controller: tokens, drag & drop, collision, tracking, tools, strategies, persistence. */
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
-  const STORE = 'bcb-state-v4';
+  const STORE = 'bcb-state-v5';
+  const STRAT_STORE = 'bcb-strategies-v1';
   const R = 6;              // player token radius (0.6 m)
   const BALL_R = 4;         // basketball token radius (0.4 m)
   const ATTACH_DIST = 10.8; // distance within which a player carries the ball (touching = 10)
@@ -17,6 +18,107 @@
     ...[1, 2, 3, 4, 5].map((n) => ({ id: 'k' + n, team: 'black', label: n })),
     { id: 'ball', team: 'ball' },
   ];
+
+  /* ---------- Default Preset Strategies ---------- */
+  const DEFAULT_STRATEGIES = [
+    {
+      id: 'setup',
+      name: 'Setup',
+      mode: 'half',
+      halfRole: 'offence',
+      tokens: {
+        b1: [42, 118],
+        k1: [54, 80],
+        ball: [33, 114],
+        b3: [27, 23],
+        k3: [39, 24],
+        b5: [74, 68],
+        k5: [75, 45],
+        k4: [101, 43],
+        b4: [112, 52],
+        k2: [125, 56],
+        b2: [140, 54],
+      },
+      strokes: [],
+      tracks: [],
+    },
+    {
+      id: 'open_for_1',
+      name: 'Open for 1',
+      mode: 'half',
+      halfRole: 'offence',
+      tokens: {
+        b1: [42, 118],
+        k1: [46, 100],
+        ball: [33, 114],
+        b3: [7, 25],
+        k3: [18, 30],
+        b5: [104, 74],
+        k5: [92, 72],
+        k4: [101, 43],
+        b4: [112, 52],
+        k2: [125, 56],
+        b2: [140, 54],
+      },
+      strokes: [
+        {
+          color: '#E53935',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowRed)',
+          pts: [
+            [36, 106],
+            [37, 95],
+            [39, 82],
+            [43, 68],
+            [49, 54],
+            [58, 42],
+            [66, 33],
+            [73, 26],
+          ],
+        },
+      ],
+      tracks: [
+        {
+          color: '#1A1A1A',
+          pts: [[54, 80], [51, 88], [48, 94], [46, 100]],
+        },
+        {
+          color: '#1A1A1A',
+          pts: [[75, 45], [82, 55], [88, 64], [92, 72]],
+        },
+        {
+          color: '#00CED1',
+          pts: [[74, 68], [84, 70], [94, 72], [104, 74]],
+        },
+        {
+          color: '#00CED1',
+          pts: [[27, 23], [17, 24], [7, 25]],
+        },
+        {
+          color: '#1A1A1A',
+          pts: [[39, 24], [28, 27], [18, 30]],
+        },
+      ],
+    },
+  ];
+
+  function loadStrategies() {
+    try {
+      const data = JSON.parse(localStorage.getItem(STRAT_STORE));
+      if (Array.isArray(data) && data.length > 0) return data;
+    } catch {}
+    return JSON.parse(JSON.stringify(DEFAULT_STRATEGIES));
+  }
+
+  let strategies = loadStrategies();
+  let currentStratId = strategies[0]?.id || 'setup';
+
+  function saveStrategies() {
+    try {
+      localStorage.setItem(STRAT_STORE, JSON.stringify(strategies));
+    } catch {}
+  }
 
   function el(tag, attrs, parent) {
     const e = document.createElementNS(NS, tag);
@@ -53,8 +155,6 @@
   function defaultPositions(mode, role = state.halfRole) {
     const p = {};
     if (mode === 'full') {
-      // Both teams in 2-3 zone defense defending their own basket (as in Page-001.jpg):
-      // Left basket (x = 15.75, y = 75, FT line at x = 58): Blue team
       const blue = {
         1: [56, 55],    // top elbow (left guard)
         2: [56, 95],    // bottom elbow (right guard)
@@ -64,12 +164,10 @@
       };
       for (const n in blue) {
         p['b' + n] = [...blue[n]];
-        // Right basket (baseline at x = 280): Black team
         p['k' + n] = [Court.L - blue[n][0], blue[n][1]];
       }
       p.ball = [140, 75]; // center court jump circle
     } else {
-      // Half court mode (basket at x = 75, y = 15.75):
       const defZone = {
         1: [54, 57],   // left elbow
         2: [96, 57],   // right elbow
@@ -86,17 +184,13 @@
       };
 
       if (role === 'defence') {
-        // Our team (Blue) is Defence (2-3 zone); Opponent (Black) is Offence
         for (const n in defZone) p['b' + n] = [...defZone[n]];
         for (const n in offPerimeter) p['k' + n] = [...offPerimeter[n]];
-        // Ball starts holding by no. 1 offensive player (k1)
-        p.ball = [75, 106]; // touching k1 at dist = 10, no overlap
+        p.ball = [75, 106];
       } else {
-        // Our team (Blue) is Offence; Opponent (Black) is Defence (2-3 zone)
         for (const n in offPerimeter) p['b' + n] = [...offPerimeter[n]];
         for (const n in defZone) p['k' + n] = [...defZone[n]];
-        // Ball starts holding by no. 1 offensive player (b1)
-        p.ball = [75, 106]; // touching b1 at dist = 10, no overlap
+        p.ball = [75, 106];
       }
     }
     return p;
@@ -106,9 +200,6 @@
   function asidePositions(mode) {
     const p = {};
     if (mode === 'full') {
-      // Top sideline is y = 0; bottom sideline is y = 150.
-      // Margin extends to y = -20 and y = 170.
-      // Blue team outside top sideline:
       p.b1 = [50, -8];
       p.b2 = [75, -8];
       p.b3 = [100, -8];
@@ -116,16 +207,12 @@
       p.b5 = [150, -8];
       p.ball = [175, -8];
 
-      // Black team outside bottom sideline:
       p.k1 = [50, 158];
       p.k2 = [75, 158];
       p.k3 = [100, 158];
       p.k4 = [125, 158];
       p.k5 = [150, 158];
     } else {
-      // Left sideline is x = 0; right sideline is x = 150.
-      // Margin extends to x = -20 and x = 170.
-      // Blue team outside left sideline:
       p.b1 = [-8, 25];
       p.b2 = [-8, 48];
       p.b3 = [-8, 71];
@@ -133,7 +220,6 @@
       p.b5 = [-8, 117];
       p.ball = [-8, 137];
 
-      // Black team outside right sideline:
       p.k1 = [158, 25];
       p.k2 = [158, 48];
       p.k3 = [158, 71];
@@ -144,24 +230,32 @@
   }
 
   /* ---------- State ---------- */
-  function freshBoard(mode, role = 'defence') {
-    return { tokens: defaultPositions(mode, role), strokes: [], tracks: [] };
+  function freshBoard(mode, role = 'offence') {
+    if (mode === 'half') {
+      const s0 = strategies[0] || DEFAULT_STRATEGIES[0];
+      return {
+        tokens: JSON.parse(JSON.stringify(s0.tokens)),
+        strokes: JSON.parse(JSON.stringify(s0.strokes || [])),
+        tracks: JSON.parse(JSON.stringify(s0.tracks || [])),
+      };
+    }
+    return { tokens: defaultPositions('full'), strokes: [], tracks: [] };
   }
 
   function loadState() {
     const fresh = {
-      mode: 'full',
-      halfRole: 'defence',
+      mode: 'half',
+      halfRole: 'offence',
       showTrack: true,
       tool: 'move',
       color: '#E53935',
-      boards: { full: freshBoard('full', 'defence'), half: freshBoard('half', 'defence') },
+      boards: { full: freshBoard('full', 'defence'), half: freshBoard('half', 'offence') },
     };
     try {
       const s = JSON.parse(localStorage.getItem(STORE));
       if (!s || !s.boards) return fresh;
-      s.mode = s.mode === 'half' ? 'half' : 'full';
-      s.halfRole = s.halfRole === 'offence' ? 'offence' : 'defence';
+      s.mode = s.mode === 'full' ? 'full' : 'half';
+      s.halfRole = s.halfRole === 'defence' ? 'defence' : 'offence';
       s.showTrack = s.showTrack !== false;
       s.tool = s.tool || 'move';
       s.color = s.color || fresh.color;
@@ -261,7 +355,7 @@
       const g = el('g', { class: 'token', 'data-id': t.id }, tokenLayer);
       const inner = el('g', { class: 'inner' }, g);
       if (t.team === 'ball') {
-        el('circle', { r: BALL_R + 1, fill: 'rgba(0,0,0,0)' }, inner); // exact touch target
+        el('circle', { r: BALL_R + 1, fill: 'rgba(0,0,0,0)' }, inner);
         el('circle', { cx: 0.6, cy: 0.9, r: BALL_R, fill: 'rgba(0,0,0,0.35)' }, inner);
         el('circle', { r: BALL_R, fill: 'url(#gBall)', stroke: '#5a2a00', 'stroke-width': 0.3 }, inner);
         const a = BALL_R, b = BALL_R * 0.7;
@@ -326,18 +420,7 @@
   }
 
   /* ---------- Breaking Line Tracks ---------- */
-  function pathD(pts) {
-    if (!pts || !pts.length) return '';
-    if (pts.length === 1) return `M${pts[0][0]} ${pts[0][1]} L${pts[0][0] + 0.01} ${pts[0][1]}`;
-    let d = `M${pts[0][0]} ${pts[0][1]}`;
-    for (let i = 1; i < pts.length - 1; i++) {
-      const [x1, y1] = pts[i];
-      const [x2, y2] = pts[i + 1];
-      d += ` Q${x1} ${y1} ${(x1 + x2) / 2} ${(y1 + y2) / 2}`;
-    }
-    const last = pts[pts.length - 1];
-    return d + ` L${last[0]} ${last[1]}`;
-  }
+  const pathD = Drawing.pathD;
 
   function tokenTrackColor(id) {
     if (id === 'ball') return '#F07A1A';
@@ -368,6 +451,364 @@
     renderTracks();
     Drawing.render(drawLayer, board().strokes);
     updateUI();
+  }
+
+  /* ---------- Strategy Management ---------- */
+  function applyStrategy(stratId) {
+    const s = strategies.find((item) => item.id === stratId);
+    if (!s) return;
+    currentStratId = stratId;
+    state.mode = s.mode || 'half';
+    if (s.halfRole) state.halfRole = s.halfRole;
+    const b = board();
+    b.tokens = JSON.parse(JSON.stringify(s.tokens));
+    b.strokes = JSON.parse(JSON.stringify(s.strokes || []));
+    b.tracks = JSON.parse(JSON.stringify(s.tracks || []));
+    histories[state.mode] = [];
+    render();
+    if (tokenEls.ball) tokenLayer.appendChild(tokenEls.ball);
+    save();
+    updateStratSelect();
+  }
+
+  function updateStratSelect() {
+    const sel = document.getElementById('stratSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    for (const s of strategies) {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      if (s.id === currentStratId) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  function openSnapshotModal() {
+    const modal = document.getElementById('snapshotModal');
+    const input = document.getElementById('stratNameInput');
+    if (!modal || !input) return;
+    input.value = 'Play ' + (strategies.length + 1);
+    modal.style.display = 'flex';
+    setTimeout(() => { input.focus(); input.select(); }, 50);
+  }
+
+  function closeSnapshotModal() {
+    const modal = document.getElementById('snapshotModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function saveSnapshot() {
+    const input = document.getElementById('stratNameInput');
+    const name = (input ? input.value : '').trim() || ('Play ' + (strategies.length + 1));
+    const newStrat = {
+      id: 'strat_' + Date.now(),
+      name,
+      mode: state.mode,
+      halfRole: state.halfRole,
+      tokens: JSON.parse(JSON.stringify(board().tokens)),
+      strokes: JSON.parse(JSON.stringify(board().strokes || [])),
+      tracks: JSON.parse(JSON.stringify(board().tracks || [])),
+    };
+    strategies.push(newStrat);
+    currentStratId = newStrat.id;
+    saveStrategies();
+    updateStratSelect();
+    closeSnapshotModal();
+    renderStratModalList();
+  }
+
+  /* Strategy Manager Modal */
+  function openStratModal() {
+    const modal = document.getElementById('stratModal');
+    if (!modal) return;
+    renderStratModalList();
+    modal.style.display = 'flex';
+  }
+
+  function closeStratModal() {
+    const modal = document.getElementById('stratModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function renderStratModalList() {
+    const list = document.getElementById('stratList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    strategies.forEach((s, idx) => {
+      const item = document.createElement('div');
+      item.className = 'strat-item' + (s.id === currentStratId ? ' active-strat' : '');
+      item.dataset.id = s.id;
+
+      // Reorder buttons (▲ / ▼)
+      const orderBox = document.createElement('div');
+      orderBox.className = 'strat-order-btns';
+      const upBtn = document.createElement('button');
+      upBtn.className = 'strat-order-btn';
+      upBtn.textContent = '▲';
+      upBtn.title = 'Move Up';
+      upBtn.disabled = (idx === 0);
+      upBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (idx > 0) {
+          const temp = strategies[idx - 1];
+          strategies[idx - 1] = strategies[idx];
+          strategies[idx] = temp;
+          saveStrategies();
+          updateStratSelect();
+          renderStratModalList();
+        }
+      };
+
+      const downBtn = document.createElement('button');
+      downBtn.className = 'strat-order-btn';
+      downBtn.textContent = '▼';
+      downBtn.title = 'Move Down';
+      downBtn.disabled = (idx === strategies.length - 1);
+      downBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (idx < strategies.length - 1) {
+          const temp = strategies[idx + 1];
+          strategies[idx + 1] = strategies[idx];
+          strategies[idx] = temp;
+          saveStrategies();
+          updateStratSelect();
+          renderStratModalList();
+        }
+      };
+      orderBox.appendChild(upBtn);
+      orderBox.appendChild(downBtn);
+
+      // Info
+      const info = document.createElement('div');
+      info.className = 'strat-info';
+      const nameRow = document.createElement('div');
+      nameRow.className = 'strat-name-row';
+      const title = document.createElement('span');
+      title.className = 'strat-title';
+      title.textContent = s.name;
+      nameRow.appendChild(title);
+      if (s.id === currentStratId) {
+        const tag = document.createElement('span');
+        tag.className = 'strat-tag';
+        tag.textContent = 'Active';
+        nameRow.appendChild(tag);
+      }
+      info.appendChild(nameRow);
+
+      // Actions (Rename, Delete)
+      const actions = document.createElement('div');
+      actions.className = 'strat-item-actions';
+
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'strat-item-btn';
+      renameBtn.textContent = '✏️ Rename';
+      renameBtn.title = 'Rename strategy';
+      renameBtn.onclick = (e) => {
+        e.stopPropagation();
+        const newName = prompt('Rename strategy:', s.name);
+        if (newName && newName.trim()) {
+          s.name = newName.trim();
+          saveStrategies();
+          updateStratSelect();
+          renderStratModalList();
+        }
+      };
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'strat-item-btn btn-danger';
+      delBtn.textContent = '🗑️';
+      delBtn.title = 'Delete strategy';
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        promptDeleteStrategy(s.id);
+      };
+
+      actions.appendChild(renameBtn);
+      actions.appendChild(delBtn);
+
+      // Progress bar for 3s hold gesture
+      const bar = document.createElement('div');
+      bar.className = 'hold-progress-bar';
+
+      item.appendChild(orderBox);
+      item.appendChild(info);
+      item.appendChild(actions);
+      item.appendChild(bar);
+
+      // Tap on item selects it
+      item.addEventListener('click', () => {
+        applyStrategy(s.id);
+        renderStratModalList();
+      });
+
+      // 3-second hold & slide to delete implementation
+      setupHoldSlideDelete(item, s.id, bar);
+
+      list.appendChild(item);
+    });
+  }
+
+  function setupHoldSlideDelete(item, stratId, progressBar) {
+    let holdTimer = null;
+    let holdStartTime = 0;
+    let animFrame = null;
+    let startX = 0, startY = 0;
+
+    function resetHold() {
+      clearTimeout(holdTimer);
+      cancelAnimationFrame(animFrame);
+      holdTimer = null;
+      progressBar.style.width = '0%';
+    }
+
+    item.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button')) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      holdStartTime = Date.now();
+
+      function updateProgress() {
+        const elapsed = Date.now() - holdStartTime;
+        const pct = Math.min(100, (elapsed / 3000) * 100);
+        progressBar.style.width = pct + '%';
+        if (pct < 100 && holdTimer) {
+          animFrame = requestAnimationFrame(updateProgress);
+        }
+      }
+      animFrame = requestAnimationFrame(updateProgress);
+
+      holdTimer = setTimeout(() => {
+        resetHold();
+        activateSlideDeleteBanner(item, stratId);
+      }, 3000);
+    });
+
+    item.addEventListener('pointermove', (e) => {
+      if (holdTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) {
+        resetHold();
+      }
+    });
+
+    item.addEventListener('pointerup', resetHold);
+    item.addEventListener('pointercancel', resetHold);
+  }
+
+  function activateSlideDeleteBanner(item, stratId) {
+    const existing = item.querySelector('.slide-delete-banner');
+    if (existing) return;
+
+    const banner = document.createElement('div');
+    banner.className = 'slide-delete-banner';
+
+    const slider = document.createElement('div');
+    slider.className = 'slide-delete-slider';
+    const text = document.createElement('div');
+    text.className = 'slide-delete-text';
+    text.textContent = 'Slide right to delete ➔';
+    const handle = document.createElement('div');
+    handle.className = 'slide-delete-handle';
+    handle.textContent = '🗑️';
+
+    slider.appendChild(text);
+    slider.appendChild(handle);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'slide-delete-cancel-btn';
+    cancelBtn.textContent = '✕';
+    cancelBtn.onclick = (e) => { e.stopPropagation(); banner.remove(); };
+
+    banner.appendChild(slider);
+    banner.appendChild(cancelBtn);
+    item.appendChild(banner);
+
+    // Slide handle interaction
+    let dragging = false;
+    let handleStartX = 0;
+
+    handle.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      handleStartX = e.clientX;
+      handle.setPointerCapture(e.pointerId);
+      e.stopPropagation();
+    });
+
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = Math.max(0, e.clientX - handleStartX);
+      const maxSlide = slider.offsetWidth - handle.offsetWidth - 4;
+      handle.style.left = Math.min(dx + 2, maxSlide) + 'px';
+
+      if (dx >= maxSlide - 10) {
+        dragging = false;
+        showConfirmButtonInBanner(banner, stratId);
+      }
+      e.stopPropagation();
+    });
+
+    function endHandle(e) {
+      if (!dragging) return;
+      dragging = false;
+      handle.style.left = '2px';
+      e.stopPropagation();
+    }
+    handle.addEventListener('pointerup', endHandle);
+    handle.addEventListener('pointercancel', endHandle);
+  }
+
+  function showConfirmButtonInBanner(banner, stratId) {
+    banner.innerHTML = '';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'slide-delete-confirm-btn';
+    confirmBtn.textContent = 'Click to Confirm Delete';
+    confirmBtn.onclick = (e) => {
+      e.stopPropagation();
+      executeDeleteStrategy(stratId);
+    };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'slide-delete-cancel-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = (e) => { e.stopPropagation(); banner.remove(); };
+
+    banner.appendChild(confirmBtn);
+    banner.appendChild(cancelBtn);
+  }
+
+  let pendingDeleteStratId = null;
+
+  function promptDeleteStrategy(stratId) {
+    if (strategies.length <= 1) {
+      alert('You must keep at least one strategy.');
+      return;
+    }
+    const s = strategies.find((item) => item.id === stratId);
+    pendingDeleteStratId = stratId;
+    const modal = document.getElementById('confirmModal');
+    const text = document.getElementById('confirmModalText');
+    if (text) text.textContent = `Are you sure you want to delete "${s ? s.name : 'this strategy'}"?`;
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function executeDeleteStrategy(stratId) {
+    if (strategies.length <= 1) {
+      alert('You must keep at least one strategy.');
+      return;
+    }
+    const idx = strategies.findIndex((s) => s.id === stratId);
+    if (idx >= 0) {
+      strategies.splice(idx, 1);
+      if (currentStratId === stratId) {
+        applyStrategy(strategies[0].id);
+      } else {
+        saveStrategies();
+        updateStratSelect();
+      }
+      renderStratModalList();
+    }
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.style.display = 'none';
   }
 
   /* ---------- Pointer handling (multi-touch) ---------- */
@@ -405,14 +846,12 @@
       }
 
       if (id === 'ball') {
-        // Dragging the ball directly moves only the ball away
         active.set(e.pointerId, {
           kind: 'drag', id, dx: x - p.x, dy: y - p.y, hasBall: false, track, trackPath,
         });
-        tokenLayer.appendChild(t); // bring ball to front
+        tokenLayer.appendChild(t);
         t.querySelector('.inner').setAttribute('transform', 'scale(1.15)');
       } else {
-        // Dragging a player token: check if player is carrying the ball
         const holder = getBallHolder();
         const hasBall = (holder === id);
         const [bx, by] = board().tokens.ball;
@@ -429,8 +868,8 @@
           trackPath,
         });
 
-        tokenLayer.appendChild(t); // bring player to front
-        tokenLayer.appendChild(tokenEls.ball); // ensure ball is always on top of players
+        tokenLayer.appendChild(t);
+        tokenLayer.appendChild(tokenEls.ball);
         t.querySelector('.inner').setAttribute('transform', 'scale(1.12)');
         if (hasBall) {
           tokenEls.ball.querySelector('.inner').setAttribute('transform', 'scale(1.15)');
@@ -455,13 +894,11 @@
     const list = events.length ? events : [e];
     if (a.kind === 'drag') {
       const p = toSvg(e);
-      // Non-overlapping collision resolution:
       const targetPos = [p.x + a.dx, p.y + a.dy];
       const newPos = resolveCollision(a.id, targetPos, a.hasBall ? 'ball' : null);
       board().tokens[a.id] = newPos;
       placeToken(a.id);
 
-      // Record track
       if (a.track && a.trackPath) {
         const last = a.track.pts[a.track.pts.length - 1];
         if (Math.hypot(newPos[0] - last[0], newPos[1] - last[1]) >= 1.0) {
@@ -470,7 +907,6 @@
         }
       }
 
-      // Move carried ball along
       if (a.hasBall && !isBallBeingDragged()) {
         const desiredBall = [newPos[0] + a.ballDx, newPos[1] + a.ballDy];
         board().tokens.ball = resolveCollision('ball', desiredBall, a.id);
@@ -494,7 +930,6 @@
       if (a.hasBall) {
         tokenEls.ball?.querySelector('.inner')?.removeAttribute('transform');
       }
-      // Finalize track
       if (a.track && a.trackPath) {
         const pts = a.track.pts;
         const totalDist = pts.length >= 2 ? Math.hypot(pts[pts.length - 1][0] - pts[0][0], pts[pts.length - 1][1] - pts[0][1]) : 0;
@@ -512,7 +947,6 @@
   svg.addEventListener('pointerup', endPointer);
   svg.addEventListener('pointercancel', endPointer);
 
-  // Block iOS page gestures (pinch zoom, double-tap zoom, rubber-band scroll)
   document.addEventListener('gesturestart', (e) => e.preventDefault());
   document.addEventListener('dblclick', (e) => e.preventDefault());
   document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
@@ -526,7 +960,6 @@
     document.querySelectorAll('[data-color]').forEach((b) => b.classList.toggle('active', b.dataset.color === state.color));
     $('#colors').classList.toggle('dim', state.tool !== 'draw');
 
-    // Role button (only shown in half-court mode)
     const roleBtn = $('#roleBtn');
     if (roleBtn) {
       if (state.mode === 'half') {
@@ -540,7 +973,6 @@
       }
     }
 
-    // Track toggle button
     const trackBtn = $('#trackToggleBtn');
     if (trackBtn) {
       trackBtn.classList.toggle('active', state.showTrack);
@@ -553,6 +985,8 @@
 
     $('#undoBtn').disabled = hist().length === 0;
     $('#clearBtn').disabled = (board().strokes.length === 0 && board().tracks.length === 0);
+
+    updateStratSelect();
   }
 
   $('#modeSeg').addEventListener('click', (e) => {
@@ -590,7 +1024,7 @@
     const c = e.target.closest('[data-color]')?.dataset.color;
     if (!c) return;
     state.color = c;
-    state.tool = 'draw'; // picking a colour switches to the pen
+    state.tool = 'draw';
     updateUI();
     save();
   });
@@ -632,9 +1066,44 @@
     save();
   });
 
+  /* Strategy Event Listeners */
+  $('#stratSelect')?.addEventListener('change', (e) => {
+    applyStrategy(e.target.value);
+  });
+
+  $('#stratCaptureBtn')?.addEventListener('click', openSnapshotModal);
+  $('#stratManageBtn')?.addEventListener('click', openStratModal);
+
+  $('#stratModalClose')?.addEventListener('click', closeStratModal);
+  $('#stratModalDone')?.addEventListener('click', closeStratModal);
+  $('#stratModalSnapshot')?.addEventListener('click', () => {
+    closeStratModal();
+    openSnapshotModal();
+  });
+
+  $('#snapshotModalClose')?.addEventListener('click', closeSnapshotModal);
+  $('#snapshotModalCancel')?.addEventListener('click', closeSnapshotModal);
+  $('#snapshotModalSave')?.addEventListener('click', saveSnapshot);
+
+  $('#confirmModalClose')?.addEventListener('click', () => {
+    $('#confirmModal').style.display = 'none';
+  });
+  $('#confirmModalCancel')?.addEventListener('click', () => {
+    $('#confirmModal').style.display = 'none';
+  });
+  $('#confirmModalOk')?.addEventListener('click', () => {
+    if (pendingDeleteStratId) executeDeleteStrategy(pendingDeleteStratId);
+  });
+
   /* ---------- Init ---------- */
   createTokens();
-  render();
+  // Apply initial strategy if board is fresh
+  if (!localStorage.getItem(STORE)) {
+    applyStrategy(currentStratId);
+  } else {
+    render();
+  }
+
   new ResizeObserver(relayout).observe(svg);
   window.addEventListener('orientationchange', () => setTimeout(relayout, 300));
 
