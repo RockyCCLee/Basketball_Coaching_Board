@@ -152,7 +152,7 @@
   }
 
   /* ---------- Default lineups ---------- */
-  function defaultPositions(mode, role = state.halfRole) {
+  function defaultPositions(mode, role = 'offence') {
     const p = {};
     if (mode === 'full') {
       const blue = {
@@ -489,13 +489,17 @@
     const input = document.getElementById('stratNameInput');
     if (!modal || !input) return;
     input.value = 'Play ' + (strategies.length + 1);
+    modal.classList.add('active-modal');
     modal.style.display = 'flex';
     setTimeout(() => { input.focus(); input.select(); }, 50);
   }
 
   function closeSnapshotModal() {
     const modal = document.getElementById('snapshotModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.classList.remove('active-modal');
+      modal.style.display = 'none';
+    }
   }
 
   function saveSnapshot() {
@@ -523,12 +527,16 @@
     const modal = document.getElementById('stratModal');
     if (!modal) return;
     renderStratModalList();
+    modal.classList.add('active-modal');
     modal.style.display = 'flex';
   }
 
   function closeStratModal() {
     const modal = document.getElementById('stratModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.classList.remove('active-modal');
+      modal.style.display = 'none';
+    }
   }
 
   function renderStratModalList() {
@@ -788,7 +796,10 @@
     const modal = document.getElementById('confirmModal');
     const text = document.getElementById('confirmModalText');
     if (text) text.textContent = `Are you sure you want to delete "${s ? s.name : 'this strategy'}"?`;
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.classList.add('active-modal');
+      modal.style.display = 'flex';
+    }
   }
 
   function executeDeleteStrategy(stratId) {
@@ -808,7 +819,10 @@
       renderStratModalList();
     }
     const modal = document.getElementById('confirmModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.classList.remove('active-modal');
+      modal.style.display = 'none';
+    }
   }
 
   /* ---------- Pointer handling (multi-touch) ---------- */
@@ -1085,12 +1099,15 @@
   $('#snapshotModalCancel')?.addEventListener('click', closeSnapshotModal);
   $('#snapshotModalSave')?.addEventListener('click', saveSnapshot);
 
-  $('#confirmModalClose')?.addEventListener('click', () => {
-    $('#confirmModal').style.display = 'none';
-  });
-  $('#confirmModalCancel')?.addEventListener('click', () => {
-    $('#confirmModal').style.display = 'none';
-  });
+  const closeConfirmModal = () => {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+      modal.classList.remove('active-modal');
+      modal.style.display = 'none';
+    }
+  };
+  $('#confirmModalClose')?.addEventListener('click', closeConfirmModal);
+  $('#confirmModalCancel')?.addEventListener('click', closeConfirmModal);
   $('#confirmModalOk')?.addEventListener('click', () => {
     if (pendingDeleteStratId) executeDeleteStrategy(pendingDeleteStratId);
   });

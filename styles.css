@@ -180,16 +180,20 @@ button:disabled { opacity: 0.35; }
 
 /* Modals */
 .modal-backdrop {
+  display: none;
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
   padding: 16px;
+}
+
+.modal-backdrop.active-modal {
+  display: flex;
 }
 
 .modal-card {
