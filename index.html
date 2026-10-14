@@ -20,6 +20,8 @@
       <button data-mode="half">Half Court</button>
     </div>
 
+    <button id="roleBtn" class="pill-btn role-defence" style="display:none">🛡️ We: Defence</button>
+
     <div class="seg" id="toolSeg">
       <button data-tool="move">✋ Move</button>
       <button data-tool="draw">✏️ Draw</button>
@@ -34,9 +36,12 @@
       <button class="swatch" data-color="#111111" style="background:#111111" aria-label="Black"></button>
     </div>
 
+    <button id="trackToggleBtn" class="pill-btn active">👣 Track: ON</button>
+
     <div class="actions">
       <button id="undoBtn">↶ Undo</button>
       <button id="clearBtn">Clear Lines</button>
+      <button id="asideBtn">Move Aside</button>
       <button id="resetBtn">Reset Players</button>
     </div>
   </header>
@@ -70,6 +75,7 @@
         </radialGradient>
       </defs>
       <g id="courtLayer"></g>
+      <g id="trackLayer"></g>
       <g id="drawLayer"></g>
       <g id="tokenLayer"></g>
     </svg>

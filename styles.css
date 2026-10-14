@@ -93,6 +93,34 @@ button:disabled { opacity: 0.35; }
 .actions button { background: var(--panel); }
 .actions button:active { background: #3d4760; }
 
+.pill-btn {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.pill-btn.active {
+  background: #17424f;
+  color: #00CED1;
+  box-shadow: 0 0 0 1.5px #00CED1 inset;
+}
+
+.role-defence {
+  background: #1b324c;
+  color: #64b5f6;
+  box-shadow: 0 0 0 1.5px #42a5f5 inset;
+}
+
+.role-offence {
+  background: #442a12;
+  color: #ffb74d;
+  box-shadow: 0 0 0 1.5px #ffa726 inset;
+}
+
 #stage {
   flex: 1;
   position: relative;
