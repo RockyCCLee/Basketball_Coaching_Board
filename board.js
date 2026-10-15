@@ -147,24 +147,24 @@
             [73, 26],
           ],
         },
-        // Blue arrow: kick out pass to 3 on left wing
+        // Green arrow: kick out pass to 3 on left wing
         {
-          color: '#1E4FFF',
+          color: '#00C853',
           width: 1.6,
           arrow: true,
-          marker: 'url(#arrowBlue)',
+          marker: 'url(#arrowGreen)',
           pts: [
             [62, 51],
             [51, 42],
             [41, 33],
           ],
         },
-        // Blue arrow: kick out pass to 4 on right wing
+        // Green arrow: kick out pass to 4 on right wing
         {
-          color: '#1E4FFF',
+          color: '#00C853',
           width: 1.6,
           arrow: true,
-          marker: 'url(#arrowBlue)',
+          marker: 'url(#arrowGreen)',
           pts: [
             [73, 47],
             [85, 43],
@@ -226,6 +226,144 @@
         },
       ],
     },
+    {
+      id: 'screen_2_3_5',
+      name: 'Screen - 2/3/5',
+      mode: 'half',
+      halfRole: 'offence',
+      tokens: {
+        b1: [97, 64],
+        ball: [88, 60],
+        k4: [100, 46],
+        b4: [121, 48],
+        k2: [124, 60],
+        b2: [123, 31],
+        b5: [69, 90],
+        k1: [55, 85],
+        k5: [75, 48],
+        b3: [28, 25],
+        k3: [40, 26],
+      },
+      strokes: [
+        // Red arrow: 5 rolls to the basket
+        {
+          color: '#E53935',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowRed)',
+          pts: [
+            [65, 82],
+            [64, 62],
+            [66, 42],
+            [73, 22],
+          ],
+        },
+        // Red arrow: 2 cuts to the basket after curl/screen
+        {
+          color: '#E53935',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowRed)',
+          pts: [
+            [117, 26],
+            [104, 20],
+            [92, 18],
+            [80, 18],
+          ],
+        },
+        // Green arrow: pass to 2
+        {
+          color: '#00C853',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowGreen)',
+          pts: [
+            [106, 44],
+            [111, 38],
+            [115, 33],
+          ],
+        },
+        // Green arrow: pass to 3 on left wing
+        {
+          color: '#00C853',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowGreen)',
+          pts: [
+            [63, 22],
+            [51, 21],
+            [35, 23],
+          ],
+        },
+        // Green arrow: kick back to key/elbow
+        {
+          color: '#00C853',
+          width: 1.6,
+          arrow: true,
+          marker: 'url(#arrowGreen)',
+          pts: [
+            [87, 23],
+            [79, 27],
+            [70, 31],
+          ],
+        },
+        // Yellow arc: screen / curl path behind 2
+        {
+          color: '#FFD600',
+          width: 1.6,
+          arrow: false,
+          pts: [
+            [113, 56],
+            [117, 51],
+            [125, 51],
+            [131, 53],
+          ],
+        },
+      ],
+      tracks: [
+        // Cyan track: 1 dribble from Setup [42, 122] across and up to [97, 64]
+        {
+          color: '#00CED1',
+          pts: [
+            [42, 122],
+            [55, 118],
+            [68, 110],
+            [82, 100],
+            [97, 90],
+            [97, 76],
+            [97, 64],
+          ],
+        },
+        // Cyan track: 2 curls from [140, 56] to [123, 31]
+        {
+          color: '#00CED1',
+          pts: [
+            [140, 56],
+            [137, 44],
+            [130, 35],
+            [123, 31],
+          ],
+        },
+        // Cyan track: 4 moves from [112, 52] to screen at [121, 48]
+        {
+          color: '#00CED1',
+          pts: [
+            [112, 52],
+            [117, 50],
+            [121, 48],
+          ],
+        },
+        // Cyan track: 5 moves from [74, 68] to [69, 90]
+        {
+          color: '#00CED1',
+          pts: [
+            [74, 68],
+            [72, 78],
+            [69, 90],
+          ],
+        },
+      ],
+    },
   ];
 
   function loadStrategies() {
@@ -250,6 +388,25 @@
       const pnrPreset = DEFAULT_STRATEGIES.find((s) => s.id === 'pick_and_roll_5_3_4');
       if (pnrPreset) {
         list.push(JSON.parse(JSON.stringify(pnrPreset)));
+      }
+    }
+
+    // Migration: update 'Pick&Roll - 5/3/4' blue arrows to green
+    const pnr = list.find((s) => s.id === 'pick_and_roll_5_3_4');
+    if (pnr && pnr.strokes) {
+      pnr.strokes.forEach((st) => {
+        if (st.color === '#1E4FFF') {
+          st.color = '#00C853';
+          st.marker = 'url(#arrowGreen)';
+        }
+      });
+    }
+
+    // Migration: ensure 'Screen - 2/3/5' is in the list
+    if (!list.some((s) => s.id === 'screen_2_3_5')) {
+      const scrPreset = DEFAULT_STRATEGIES.find((s) => s.id === 'screen_2_3_5');
+      if (scrPreset) {
+        list.push(JSON.parse(JSON.stringify(scrPreset)));
       }
     }
 
