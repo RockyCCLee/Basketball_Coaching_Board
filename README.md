@@ -6,74 +6,36 @@ A responsive, touch-friendly digital tactics board designed for basketball coach
 
 ---
 
-## Requirements & Features Summary
+## Documentation
 
-### 1. Court Modes & Formations
-- **Full Court & Half Court Modes:**
-  - Independent state: switching between full and half court retains each mode's tokens, tracks, and drawings separately.
-  - Accurate FIBA court markings, wood floor texture, painted keys, free-throw circles, restricted areas, backboards, and rims.
-- **Default 2-3 Zone Defense Formations:**
-  - **Full Court:** Default token positions place both teams in a 2-3 zone alignment.
-  - **Half Court:** Defending team is positioned in a 2-3 zone; offensive team is spaced outside the 3-point arc.
-- **Offence / Defence Role Switch:**
-  - In Half Court mode, an instant toggle button switches your team's role between Offence and Defence.
-  - The basketball automatically starts in the hands of offensive player #1.
+- 📄 **[Requirements & Feature Specifications](docs/requirements.md)**: Comprehensive, point-form breakdown of all court modes, token mechanics, tracking lines, drawing tools, strategy management, and PWA capabilities.
 
-### 2. Token & Ball Interaction Mechanics
-- **Player & Ball Tokens:**
-  - Two 5-player squads: Team Cyan (`#00CED1`, numbered 1–5) and Team Black (`#1A1A1A`, numbered 1–5), plus an orange basketball token.
-- **Multi-Touch Support:**
-  - Move multiple tokens simultaneously using multi-finger drag & drop.
-- **Collision Avoidance (No Overlap):**
-  - Tokens cannot overlap each other; dynamic collision resolution maintains physical spacing.
-- **Magnetic Ball Possession:**
-  - When the basketball is placed on or near a player, dragging that player automatically carries the ball along.
-  - Dragging the basketball directly allows passing or shooting the ball away from the player.
-- **Bench / Sideline Parking:**
-  - **Move Aside Button:** Instantly parks all player tokens off-court outside the sideline in both full and half court modes.
-  - **Reset Players Button:** Returns all tokens back to their tactical default positions.
+---
 
-### 3. Movement Tracking Lines
-- **Real-Time Movement Paths:**
-  - Moving any player token automatically draws a broken (dashed) line illustrating its movement path.
-  - Path color matches the token's team color (Cyan for Team Blue, Black for Team Black).
-- **Track Controls:**
-  - **Track On/Off Toggle:** Turn movement path tracking on or off anytime.
-  - **Clear Lines Integration:** Clearing tactical lines also clears movement tracking lines.
+## Key Highlights
 
-### 4. Drawing & Annotation Tools
-- **Tool Selector:**
-  - Seamlessly switch between **Move (✋)**, **Draw (✏️)**, and **Erase (🧽)**.
-- **Color Palette & Arrowheads:**
-  - 5 tactical drawing colors: Red (`#E53935`), Green (`#00C853`), Blue (`#1E4FFF`), Yellow (`#FFD600`), and Black (`#111111`).
-  - Matching SVG directional arrowheads for tactical pass, drive, screen, and cut notations.
-- **Precision Erasing & History:**
-  - **Erase Mode:** Stroke-based collision detection erases lines by swiping across them.
-  - **Undo (↶):** Step backward through drawing actions and deletions.
-  - **Clear Lines:** Instantly clears all drawn strokes and movement tracks.
+- **Full & Half Court Modes:** Realistic FIBA court layout with independent state memory and 2-3 zone alignments.
+- **Offence / Defence Role Toggle:** Instant role switching in half-court mode with ball starting in player #1's hands.
+- **Multi-Touch Token Movement:** Move multiple tokens at once with collision detection to prevent overlapping.
+- **Magnetic Ball Control:** Moving a ball handler carries the basketball along automatically; dragging the ball directly moves it independently.
+- **Movement Tracking:** Broken (dashed) lines in matching team colors trace player movement in real-time.
+- **Tactical Drawing & Erasing:** Multi-color pen with directional arrowheads, stroke eraser, undo, and clear actions.
+- **Strategy & Snapshot Manager:** Built-in presets (*Setup*, *1v1 - 1*, *Pick&Roll - 5/3/4*, *Screen - 2/3/5*), custom snapshot capture, inline renaming, reordering, and hold-to-delete protection.
+- **Offline PWA:** Installable to Home Screen on iPad / tablet with offline caching.
 
-### 5. Strategy & Playbook Management
-- **Strategy Dropdown Selector:**
-  - Quick-access menu to switch between saved plays and formations.
-- **Built-in Tactical Presets:**
-  - **Setup:** Base half-court offensive spacing against 2-3 zone defense with ball at #1.
-  - **1v1 - 1:** Isolation spacing for player #1.
-  - **Pick&Roll - 5/3/4:** High ball screen by #5 for #1, #5 rolling to the rim (red arrow), kick-out pass options to #3 and #4 (green arrows).
-  - **Screen - 2/3/5:** Off-ball screen by #4 for #2 curling to the rim, ball screen by #5, with passing and handoff options.
-- **Custom Snapshot Capture:**
-  - Capture any board state (tokens, tracks, and drawn lines) into a new snapshot saved directly to the bottom of the strategy list.
-- **Strategy Manager:**
-  - **Rename:** Edit play names inline anytime.
-  - **Reorder:** Rearrange the order of strategies in the dropdown list.
-  - **Secure Deletion:** 3-second hold & slide-to-the-right gesture (or delete button) followed by a confirmation prompt (safeguards keeping at least one strategy).
-- **Persistence & Migration:**
-  - All plays and preferences persist automatically in browser `localStorage`.
-  - Built-in schema migrations ensure updates and new presets sync without overwriting custom user plays.
+---
 
-### 6. PWA & Offline Support
-- Fully functional offline via Service Worker asset caching (`sw.js`).
-- Add to Home Screen support on iPad / iOS Safari and Android Chrome for a native app experience.
-- Fast loading with zero external runtime library dependencies (pure HTML5, CSS3, and vanilla JavaScript).
+## Usage
+
+- **Full Court / Half Court:** Toggle view mode from the top bar (each remembers its own tokens and drawings).
+- **Move (✋):** Drag tokens anywhere across the court.
+- **Draw (✏️):** Choose a color swatch and draw tactical lines with directional arrowheads using finger, stylus, or Apple Pencil.
+- **Erase (🧽):** Swipe over any line to erase it.
+- **Track Toggle:** Turn dashed movement trails On or Off.
+- **Move Aside:** Quickly park all tokens outside the sideline.
+- **Reset Players:** Return tokens to their default formation.
+- **Strategy Dropdown:** Select a saved tactic or tap ⚙️ to manage, rename, reorder, or delete strategies.
+- **Capture Snapshot:** Save the current court layout and drawings as a named play.
 
 ---
 
@@ -83,4 +45,4 @@ A responsive, touch-friendly digital tactics board designed for basketball coach
 # Start a local HTTP server
 python3 -m http.server 8000
 ```
-Then open `http://localhost:8000` (or `http://<your-ip>:8000` on your iPad on the same Wi-Fi network).
+Then open `http://localhost:8000` on your desktop or `http://<your-mac-ip>:8000` on an iPad connected to the same Wi-Fi network.
